@@ -20,6 +20,7 @@ merged_df['year'] = merged_df['date'].dt.year
 
 
 merged_df_country = merged_df.sort_values(by='month', ascending=True)
+merged_df_country['monthly_avg']=merged_df_country.groupby(['country', 'month'])['avg_temp'].transform('mean')
 
 df_morocco = merged_df_country[merged_df_country['country']=='Morocco']
 
@@ -28,6 +29,9 @@ df_morocco = df_morocco[['month', 'avg_temp', 'avg_max_temp', 'avg_min_temp']]
 
 merged_df_country['monthly_avg']=merged_df_country.groupby(['country', 'month'])['avg_temp'].transform('mean')
 
+df_countries =merged_df_country[merged_df_country['country'].isin(['Morocco', 'Rwanda', 'South Africa'])]
+df_countries = df_countries[['month', 'monthly_avg', 'avg_max_temp', 'avg_min_temp']]
+
 d_table = dash_table.DataTable(df_morocco.to_dict('records'),
                                   [{"name": i, "id": i} for i in df_morocco.columns],
                                style_data={'color': 'white','backgroundColor': 'black'},
@@ -35,9 +39,6 @@ d_table = dash_table.DataTable(df_morocco.to_dict('records'),
                                   'backgroundColor': 'rgb(210, 210, 210)',
                                   'color': 'black','fontWeight': 'bold'
     })
-
-df_countries =merged_df_country[merged_df_country['country'].isin(['Morocco', 'Rwanda', 'South Africa'])]
-df_countries = df_countries[['month', 'avg_temp', 'avg_max_temp', 'avg_min_temp']]
 
 fig =px.bar(df_countries, 
              x='month', 
