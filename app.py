@@ -37,7 +37,7 @@ d_table = dash_table.DataTable(df_morocco.to_dict('records'),
     })
 
 df_countries =merged_df_country[merged_df_country['country'].isin(['Morocco', 'Rwanda', 'South Africa'])]
-
+df_countries = df_countries[['month', 'avg_temp', 'avg_max_temp', 'avg_min_temp']]
 
 fig =px.bar(df_countries, 
              x='month', 
