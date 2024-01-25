@@ -7,8 +7,8 @@ import plotly.express as px
 from dash import dash_table
 import dash_bootstrap_components as dbc
 
-df_climate = pd.read_csv('/Users/lamiaebenouahi/Desktop/Spiced Bootcamp/GitHub/lemongrass-regression-student-code/week_08_dashboards/climate.csv')
-df_iso= pd.read_csv('/Users/lamiaebenouahi/Desktop/Spiced Bootcamp/GitHub/lemongrass-regression-student-code/week_08_dashboards/weekly_project/iso_codes.csv')
+df_climate = pd.read_csv('/Users/lamiaebenouahi/Desktop/Spiced Bootcamp/weather_dash/climate.csv')
+df_iso= pd.read_csv('/Users/lamiaebenouahi/Desktop/Spiced Bootcamp/weather_dash/iso_codes.csv')
 
 merged_df = df_climate.merge(df_iso, on='country', how='left')
 
