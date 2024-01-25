@@ -7,8 +7,8 @@ import plotly.express as px
 from dash import dash_table
 import dash_bootstrap_components as dbc
 
-df_climate = pd.read_csv('/Users/lamiaebenouahi/Desktop/Spiced Bootcamp/weather_dash/climate.csv')
-df_iso= pd.read_csv('/Users/lamiaebenouahi/Desktop/Spiced Bootcamp/weather_dash/iso_codes.csv')
+df_climate = pd.read_csv('climate.csv')
+df_iso= pd.read_csv('iso_codes.csv')
 
 merged_df = df_climate.merge(df_iso, on='country', how='left')
 
