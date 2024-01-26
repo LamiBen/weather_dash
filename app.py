@@ -27,13 +27,15 @@ df_morocco = merged_df_country[merged_df_country['country']=='Morocco']
 
 df_morocco = df_morocco[['month', 'avg_temp', 'avg_max_temp', 'avg_min_temp']]
 
-merged_df_country['monthly_avg']=merged_df_country.groupby(['country', 'month'])['avg_temp'].transform('mean')
+df_countries =merged_df_country[merged_df_country['country'].isin(['Egypt', 'South Africa', 'Mozambique','Tanzania','Sudan'])]
+df_countries = df_countries[['country','alpha-3','month', 'monthly_avg', 'avg_max_temp', 'avg_min_temp']]
+df_countries['alpha-3'] = df_countries['alpha-3'].fillna('TZ')
 
-df_countries =merged_df_country[merged_df_country['country'].isin(['Morocco', 'Rwanda', 'South Africa'])]
-df_countries = df_countries[['month', 'monthly_avg', 'avg_max_temp', 'avg_min_temp']]
-
-d_table = dash_table.DataTable(df_morocco.to_dict('records'),
-                                  [{"name": i, "id": i} for i in df_morocco.columns],
+monthly_country_aggregates = df_countries.groupby(['country', 'month']).agg({
+    'monthly_avg': 'mean', 'avg_max_temp': 'max', 'avg_min_temp':'min',
+}).reset_index()
+d_table = dash_table.DataTable(monthly_country_aggregates.to_dict('records'),
+                                  [{"name": i, "id": i} for i in monthly_country_aggregates.columns],
                                style_data={'color': 'white','backgroundColor': 'black'},
                               style_header={
                                   'backgroundColor': 'rgb(210, 210, 210)',
@@ -42,39 +44,39 @@ d_table = dash_table.DataTable(df_morocco.to_dict('records'),
 
 fig =px.bar(df_countries, 
              x='month', 
-             y='avg_temp',  
+             y='monthly_avg',  
              color='country',
              barmode='group',
-             height=300, title = "Morocco vs Rwanda & South Africa",)
+            color_discrete_sequence=px.colors.qualitative.Plotly,
+             height=300, title = "Monthly Averages of : Egypt, South Africa, Mozambique, Tanzania",)
 graph = dcc.Graph()
 
-fig2 = px.line(df_countries, x='month', y='monthly_avg', color='country', height=300, title="Average Temperature in Morocco, Rwanda & South Africa", markers=True)
+fig2 = px.line(df_countries, x='month', y='monthly_avg', color='country', height=300, title="Average Temperature in Egypt, South Africa, Mozambique, Tanzania", markers=True)
 graph2 = dcc.Graph(figure=fig2)
 
-fig3 = px.choropleth(df_countries, locations='alpha-3', 
+fig3 = px.choropleth(df_countries, locations='country', 
                     projection='natural earth', animation_frame="month",
                     scope='africa',
-                    color='avg_temp', locationmode='ISO-3', 
-                    color_continuous_scale=px.colors.sequential.Plasma)
+                    color='monthly_avg', locationmode='country names', 
+                    color_continuous_scale=px.colors.sequential.Electric)
 graph3 = dcc.Graph(figure=fig3)
 
 
-app =dash.Dash(external_stylesheets=[dbc.themes.DARKLY])
+app =dash.Dash(external_stylesheets=[dbc.themes.LUX])
 server = app.server
 countries =df_countries['country'].unique().tolist() 
 
-dropdown = dcc.Dropdown(['Morocco', 'Rwanda', 'South Africa'], value=['Morocco', 'Rwanda', 'South Africa'], 
-                        clearable=False, multi=True, style ={'paddingLeft': '30px', 
-                                                             "backgroundColor": "#222222", "color": "#222222"})
+dropdown = dcc.Dropdown(['Egypt', 'South Africa', 'Mozambique','Tanzania','Sudan'], value=['Egypt', 'South Africa', 'Mozambique','Tanzania','Sudan'], 
+                        clearable=False, multi=True, style ={'padding': '15px', 'backgroundColor': '#222222', 'color': '#808000'})
 
 
-app.layout = html.Div([html.H1('Weather Analysis', style={'textAlign': 'center', 'color': '#636EFA'}), 
-                       html.Div(html.P("Using our  we take a look at Morocco's profile"), 
-                                style={'marginLeft': 50, 'marginRight': 25}),
-                       html.Div([html.Div('Morocco', 
-                                          style={'backgroundColor': '#636EFA', 'color': 'white', 
-                                                 'width': '900px', 'marginLeft': 'auto', 'marginRight': 'auto'}),
-                                 d_table, dropdown, graph,  graph2, graph3])
+app.layout = html.Div([html.H1('Weather Analysis for Africas Top-5 Best Diving Destinations', style={'textAlign': 'center', 'color': '#008080', 'fontSize': '40px'}),
+                      html.Div(html.P("Monthly Averages of:", style={'fontSize': '20px', 'textAlign': 'center'}), 
+                         style={'backgroundColor': '#50C878','color': 'white','marginLeft': 50, 'marginRight': 25, 'textAlign': 'center', 'borderRadius': '10px','borderstyle':'double'}),
+                       html.Div([html.Div('Egypt, South Africa, Mozambique, Tanzania , Sudan', 
+                                          style={'backgroundColor': '#007FFF', 'color': 'white', 'padding': '10px', 
+                        'width': '80%', 'margin': '20px auto', 'textAlign': 'center', 'borderRadius': '10px'}),
+                                d_table,dropdown, graph,  graph2, graph3])
                       ])
 @callback(
     Output(graph, "figure"),
@@ -83,36 +85,42 @@ app.layout = html.Div([html.H1('Weather Analysis', style={'textAlign': 'center',
     Input(dropdown, "value"))
 
 def update_bar_chart(countries): 
-    mask = df_countries["country"].isin(countries) # coming from the function parameter
+    mask = df_countries["country"].isin(countries) 
     fig =px.bar(df_countries[mask], 
              x='month', 
-             y='avg_temp',  
+             y='monthly_avg',  
              color='country',
-             barmode='group',
-             height=300, title = "Morocco vs Rwanda & South Africa",)
+            barmode='group',
+             height=300, title = 'Monthly Averages of: Egypt, South Africa, Mozambique, Tanzania & Sudan',)
     fig = fig.update_layout(
         plot_bgcolor="#222222", paper_bgcolor="#222222", font_color="white"
     )
-    fig2 = px.line(df_countries[mask], x='month', y='monthly_avg', color='country', height=300, title="Average Temperature in Morocco, Rwanda & South Africa", markers=True)
+    fig2 = px.line(df_countries[mask], x='month', y='monthly_avg', color='country', height=300, title="Monthly Averages of : Egypt, South Africa, Mozambique, Tanzania & Sudan", markers=True)
     fig2.update_layout(
     plot_bgcolor="#222222", 
     paper_bgcolor="#222222", 
     font_color="white"
     )
-    fig3 = px.choropleth(df_countries[mask], locations='alpha-3', 
+    fig3 = px.choropleth(df_countries[mask], locations='country', 
                     projection='natural earth', animation_frame="month",
                     scope='africa',
-                    color='avg_temp', locationmode='ISO-3', 
-                    color_continuous_scale=px.colors.sequential.Plasma)
+                    color='monthly_avg', locationmode='country names', 
+                    color_continuous_scale=px.colors.sequential.Electric)
     fig3 = fig3.update_layout(width=1000, height=600,
     coloraxis_colorbar=dict(title='Average Temperature (°C)'),
-    coloraxis=dict(cmin=df_countries[mask]['avg_temp'].min(), cmax=df_countries[mask]['avg_temp'].max(),
+    coloraxis=dict(cmin=df_countries[mask]['monthly_avg'].min(), cmax=df_countries[mask]['monthly_avg'].max(),
     ))
 
     fig3 = fig3.update_layout(
         plot_bgcolor="#222222", paper_bgcolor="#222222", font_color="white", geo_bgcolor="#222222")
+    fig3.update_layout(updatemenus=[
+    dict(type='buttons', showactive=False, buttons=[
+        dict(label='Play', method='animate', args=[None, dict(frame=dict(duration=500, redraw=True), fromcurrent=True)]),
+        dict(label='Pause', method='animate', args=[[None], dict(frame=dict(duration=0, redraw=True), mode='immediate')]),
+    ])
+])
     
     return fig, fig2, fig3
 
 if __name__ == "__main__":
-    app.run_server()
+    app.run_server(port=8092)
