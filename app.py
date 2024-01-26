@@ -33,7 +33,7 @@ df_countries['alpha-3'] = df_countries['alpha-3'].fillna('TZ')
 
 monthly_country_aggregates = df_countries.groupby(['country', 'month']).agg({
     'monthly_avg': 'mean', 'avg_max_temp': 'max', 'avg_min_temp':'min',
-}).reset_index()
+}).reset_index().round(2)
 d_table = dash_table.DataTable(monthly_country_aggregates.to_dict('records'),
                                   [{"name": i, "id": i} for i in monthly_country_aggregates.columns],
                                style_data={'color': 'black','backgroundColor': '#FFFFE0'},
