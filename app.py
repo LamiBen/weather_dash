@@ -20,7 +20,7 @@ merged_df['year'] = merged_df['date'].dt.year
 
 
 merged_df_country = merged_df.sort_values(by='month', ascending=True)
-merged_df_country['monthly_avg']=merged_df_country.groupby(['country', 'month'])['avg_temp'].transform('mean')
+merged_df_country['monthly_avg']=merged_df_country.groupby(['country', 'month'])['avg_temp'].transform('mean').round(2)
 
 df_morocco = merged_df_country[merged_df_country['country']=='Morocco']
 
