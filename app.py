@@ -106,7 +106,7 @@ def update_bar_chart(countries):
                     scope='africa',
                     color='monthly_avg', locationmode='country names', 
                     color_continuous_scale=px.colors.sequential.Electric)
-    fig3 = fig3.update_layout(width=1000, height=600,
+    fig3 = fig3.update_layout(height=600,
     coloraxis_colorbar=dict(title='Average Temperature (°C)'),
     coloraxis=dict(cmin=df_countries[mask]['monthly_avg'].min(), cmax=df_countries[mask]['monthly_avg'].max(),
     ))
