@@ -92,6 +92,8 @@ def update_bar_chart(countries):
              color='country',
             barmode='group',
              height=300, title = 'Monthly Averages of: Egypt, South Africa, Mozambique, Tanzania & Sudan',)
+    fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='black')
+    fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='black')
     fig = fig.update_layout(
         plot_bgcolor="#FFFFE0", paper_bgcolor="#FFFFE0", font_color="black"
     )
