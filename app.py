@@ -36,7 +36,7 @@ monthly_country_aggregates = df_countries.groupby(['country', 'month']).agg({
 }).reset_index()
 d_table = dash_table.DataTable(monthly_country_aggregates.to_dict('records'),
                                   [{"name": i, "id": i} for i in monthly_country_aggregates.columns],
-                               style_data={'color': 'black','backgroundColor': '#AFEEEE'},
+                               style_data={'color': 'black','backgroundColor': '#FFFFE0'},
                               style_header={
                                   'backgroundColor': 'rgb(210, 210, 210)',
                                   'color': 'black','fontWeight': 'bold'
@@ -67,7 +67,7 @@ server = app.server
 countries =df_countries['country'].unique().tolist() 
 
 dropdown = dcc.Dropdown(['Egypt', 'South Africa', 'Mozambique','Tanzania','Sudan'], value=['Egypt', 'South Africa', 'Mozambique','Tanzania','Sudan'], 
-                        clearable=False, multi=True, style ={'padding': '15px', 'backgroundColor': '#AFEEEE', 'color': 'purple'})
+                        clearable=False, multi=True, style ={'padding': '15px', 'backgroundColor': '#FFFFE0', 'color': 'purple'})
 
 
 app.layout = html.Div([html.H1('Weather Analysis for Africas Top-5 Best Diving Destinations', style={'textAlign': 'center', 'color': '#008080', 'fontSize': '40px'}),
@@ -93,12 +93,14 @@ def update_bar_chart(countries):
             barmode='group',
              height=300, title = 'Monthly Averages of: Egypt, South Africa, Mozambique, Tanzania & Sudan',)
     fig = fig.update_layout(
-        plot_bgcolor="#AFEEEE", paper_bgcolor="#AFEEEE", font_color="black"
+        plot_bgcolor="#FFFFE0", paper_bgcolor="#FFFFE0", font_color="black"
     )
     fig2 = px.line(df_countries[mask], x='month', y='monthly_avg', color='country', height=300, title="Monthly Averages of : Egypt, South Africa, Mozambique, Tanzania & Sudan", markers=True)
+    fig2.update_xaxes(showgrid=True, gridwidth=1, gridcolor='black')
+    fig2.update_yaxes(showgrid=True, gridwidth=1, gridcolor='black')
     fig2.update_layout(
-    plot_bgcolor="#AFEEEE", 
-    paper_bgcolor="#AFEEEE", 
+    plot_bgcolor="#FFFFE0", 
+    paper_bgcolor="#FFFFE0", 
     font_color="black"
     )
     fig3 = px.choropleth(df_countries[mask], locations='country', 
@@ -112,7 +114,7 @@ def update_bar_chart(countries):
     ))
 
     fig3 = fig3.update_layout(
-        plot_bgcolor="#AFEEEE", paper_bgcolor="#AFEEEE", font_color="black", geo_bgcolor="#AFEEEE")
+        plot_bgcolor="#FFFFE0", paper_bgcolor="#FFFFE0", font_color="black", geo_bgcolor="#FFFFE0")
     fig3.update_layout(updatemenus=[
     dict(type='buttons', showactive=False, buttons=[
         dict(label='Play', method='animate', args=[None, dict(frame=dict(duration=500, redraw=True), fromcurrent=True)]),
