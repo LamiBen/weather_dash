@@ -1,130 +1,127 @@
-import plotly.express as px
-import pandas as pd
-import dash
-from dash import Dash, dcc, html, callback
-from dash.dependencies import Input, Output, State
-import plotly.express as px
-from dash import dash_table
 import dash_bootstrap_components as dbc
+import pandas as pd
+import plotly.express as px
+from dash import Dash, Input, Output, callback, dash_table, dcc, html
 
-df_climate = pd.read_csv('climate.csv')
-df_iso= pd.read_csv('iso_codes.csv')
-
-merged_df = df_climate.merge(df_iso, on='country', how='left')
-
-merged_df['date'] = pd.to_datetime(merged_df['date'])
-
-merged_df['day'] = merged_df['date'].dt.day
-merged_df['month'] = merged_df['date'].dt.month
-merged_df['year'] = merged_df['date'].dt.year
+COUNTRIES = ['Egypt', 'South Africa', 'Mozambique', 'Tanzania', 'Sudan']
+PAPER = '#FFFFE0'
 
 
-merged_df_country = merged_df.sort_values(by='month', ascending=True)
-merged_df_country['monthly_avg']=merged_df_country.groupby(['country', 'month'])['avg_temp'].transform('mean').round(2)
+def load_country_data(path='climate.csv'):
+    """Return monthly average temperatures for the five featured countries.
 
-df_morocco = merged_df_country[merged_df_country['country']=='Morocco']
+    One row per city-day in the source file. Temperatures are averaged per
+    country and calendar month, then the monthly averages are kept per row.
+    """
+    df = pd.read_csv(path)
+    df['date'] = pd.to_datetime(df['date'])
+    df['month'] = df['date'].dt.month
 
-
-df_morocco = df_morocco[['month', 'avg_temp', 'avg_max_temp', 'avg_min_temp']]
-
-df_countries =merged_df_country[merged_df_country['country'].isin(['Egypt', 'South Africa', 'Mozambique','Tanzania','Sudan'])]
-df_countries = df_countries[['country','alpha-3','month', 'monthly_avg', 'avg_max_temp', 'avg_min_temp']]
-df_countries['alpha-3'] = df_countries['alpha-3'].fillna('TZ')
-
-monthly_country_aggregates = df_countries.groupby(['country', 'month']).agg({
-    'monthly_avg': 'mean', 'avg_max_temp': 'max', 'avg_min_temp':'min',
-}).reset_index().round(2)
-d_table = dash_table.DataTable(monthly_country_aggregates.to_dict('records'),
-                                  [{"name": i, "id": i} for i in monthly_country_aggregates.columns],
-                               style_data={'color': 'black','backgroundColor': '#FFFFE0'},
-                              style_header={
-                                  'backgroundColor': 'rgb(210, 210, 210)',
-                                  'color': 'black','fontWeight': 'bold'
-    })
-
-fig =px.bar(df_countries, 
-             x='month', 
-             y='monthly_avg',  
-             color='country',
-             barmode='group',
-            color_discrete_sequence=px.colors.qualitative.Plotly,
-             height=300, title = "Monthly Averages of : Egypt, South Africa, Mozambique, Tanzania",)
-graph = dcc.Graph()
-
-fig2 = px.line(df_countries, x='month', y='monthly_avg', color='country', height=300, title="Average Temperature in Egypt, South Africa, Mozambique, Tanzania", markers=True)
-graph2 = dcc.Graph(figure=fig2)
-
-fig3 = px.choropleth(df_countries, locations='country', 
-                    projection='natural earth', animation_frame="month",
-                    scope='africa',
-                    color='monthly_avg', locationmode='country names', 
-                    color_continuous_scale=px.colors.sequential.Electric)
-graph3 = dcc.Graph(figure=fig3)
+    df['monthly_avg'] = (
+        df.groupby(['country', 'month'])['avg_temp'].transform('mean').round(2)
+    )
+    return df[df['country'].isin(COUNTRIES)][
+        ['country', 'month', 'monthly_avg', 'avg_max_temp', 'avg_min_temp']
+    ].copy()
 
 
-app =dash.Dash(external_stylesheets=[dbc.themes.LUX])
-server = app.server
-countries =df_countries['country'].unique().tolist() 
+def build_summary_table(df):
+    summary = df.groupby(['country', 'month']).agg(
+        monthly_avg=('monthly_avg', 'mean'),
+        avg_max_temp=('avg_max_temp', 'max'),
+        avg_min_temp=('avg_min_temp', 'min'),
+    ).reset_index().round(2)
 
-dropdown = dcc.Dropdown(['Egypt', 'South Africa', 'Mozambique','Tanzania','Sudan'], value=['Egypt', 'South Africa', 'Mozambique','Tanzania','Sudan'], 
-                        clearable=False, multi=True, style ={'padding': '15px', 'backgroundColor': '#FFFFE0', 'color': 'purple'})
+    return dash_table.DataTable(
+        summary.to_dict('records'),
+        [{'name': c, 'id': c} for c in summary.columns],
+        style_data={'color': 'black', 'backgroundColor': PAPER},
+        style_header={'backgroundColor': 'rgb(210, 210, 210)',
+                      'color': 'black', 'fontWeight': 'bold'},
+    )
 
 
-app.layout = html.Div([html.H1('Weather Analysis for Africas Top-5 Best Diving Destinations', style={'textAlign': 'center', 'color': '#008080', 'fontSize': '40px'}),
-                      html.Div(html.P("Monthly Averages of:", style={'fontSize': '20px', 'textAlign': 'center'}), 
-                         style={'backgroundColor': '#50C878','color': 'white','marginLeft': 50, 'marginRight': 25, 'textAlign': 'center', 'borderRadius': '10px','borderstyle':'double'}),
-                       html.Div([html.Div('Egypt, South Africa, Mozambique, Tanzania , Sudan', 
-                                          style={'backgroundColor': '#007FFF', 'color': 'white', 'padding': '10px', 
-                        'width': '80%', 'margin': '20px auto', 'textAlign': 'center', 'borderRadius': '10px'}),
-                                d_table,dropdown, graph,  graph2, graph3])
-                      ])
-@callback(
-    Output(graph, "figure"),
-    Output(graph2, "figure"),
-    Output(graph3, "figure"),
-    Input(dropdown, "value"))
-
-def update_bar_chart(countries): 
-    mask = df_countries["country"].isin(countries) 
-    fig =px.bar(df_countries[mask], 
-             x='month', 
-             y='monthly_avg',  
-             color='country',
-            barmode='group',
-             height=300, title = 'Monthly Averages of: Egypt, South Africa, Mozambique, Tanzania & Sudan',)
+def style_figure(fig):
     fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='black')
     fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='black')
-    fig = fig.update_layout(
-        plot_bgcolor="#FFFFE0", paper_bgcolor="#FFFFE0", font_color="black"
-    )
-    fig2 = px.line(df_countries[mask], x='month', y='monthly_avg', color='country', height=300, title="Monthly Averages of : Egypt, South Africa, Mozambique, Tanzania & Sudan", markers=True)
-    fig2.update_xaxes(showgrid=True, gridwidth=1, gridcolor='black')
-    fig2.update_yaxes(showgrid=True, gridwidth=1, gridcolor='black')
-    fig2.update_layout(
-    plot_bgcolor="#FFFFE0", 
-    paper_bgcolor="#FFFFE0", 
-    font_color="black"
-    )
-    fig3 = px.choropleth(df_countries[mask], locations='country', 
-                    projection='natural earth', animation_frame="month",
-                    scope='africa',
-                    color='monthly_avg', locationmode='country names', 
-                    color_continuous_scale=px.colors.sequential.Electric)
-    fig3 = fig3.update_layout(height=600,
-    coloraxis_colorbar=dict(title='Average Temperature (°C)'),
-    coloraxis=dict(cmin=df_countries[mask]['monthly_avg'].min(), cmax=df_countries[mask]['monthly_avg'].max(),
+    fig.update_layout(plot_bgcolor=PAPER, paper_bgcolor=PAPER, font_color='black')
+    return fig
+
+
+def build_figures(df, selected):
+    # With nothing selected, show all five countries rather than an empty chart.
+    selected = selected or COUNTRIES
+    data = df[df['country'].isin(selected)]
+    title_countries = ', '.join(selected)
+
+    bar = style_figure(px.bar(
+        data, x='month', y='monthly_avg', color='country', barmode='group',
+        height=300, title=f'Monthly Averages of: {title_countries}',
     ))
 
-    fig3 = fig3.update_layout(
-        plot_bgcolor="#FFFFE0", paper_bgcolor="#FFFFE0", font_color="black", geo_bgcolor="#FFFFE0")
-    fig3.update_layout(updatemenus=[
-    dict(type='buttons', showactive=False, buttons=[
-        dict(label='Play', method='animate', args=[None, dict(frame=dict(duration=500, redraw=True), fromcurrent=True)]),
-        dict(label='Pause', method='animate', args=[[None], dict(frame=dict(duration=0, redraw=True), mode='immediate')]),
-    ])
-])
-    
-    return fig, fig2, fig3
+    line = style_figure(px.line(
+        data, x='month', y='monthly_avg', color='country', markers=True,
+        height=300, title=f'Monthly Averages of: {title_countries}',
+    ))
 
-if __name__ == "__main__":
-    app.run_server(port=8092)
+    choropleth = px.choropleth(
+        data, locations='country', locationmode='country names',
+        projection='natural earth', scope='africa',
+        animation_frame='month', color='monthly_avg',
+        color_continuous_scale=px.colors.sequential.Electric,
+    )
+    choropleth.update_layout(
+        height=600,
+        coloraxis_colorbar=dict(title='Average Temperature (°C)'),
+        coloraxis=dict(cmin=data['monthly_avg'].min(), cmax=data['monthly_avg'].max()),
+        plot_bgcolor=PAPER, paper_bgcolor=PAPER, font_color='black', geo_bgcolor=PAPER,
+        updatemenus=[dict(type='buttons', showactive=False, buttons=[
+            dict(label='Play', method='animate',
+                 args=[None, dict(frame=dict(duration=500, redraw=True), fromcurrent=True)]),
+            dict(label='Pause', method='animate',
+                 args=[[None], dict(frame=dict(duration=0, redraw=True), mode='immediate')]),
+        ])],
+    )
+    return bar, line, choropleth
+
+
+df_countries = load_country_data()
+
+app = Dash(__name__, external_stylesheets=[dbc.themes.LUX])
+server = app.server
+
+app.layout = html.Div([
+    html.H1("Weather Analysis for Africa's Top-5 Best Diving Destinations",
+            style={'textAlign': 'center', 'color': '#008080', 'fontSize': '40px'}),
+    html.Div(html.P('Monthly Averages of:', style={'fontSize': '20px', 'textAlign': 'center'}),
+             style={'backgroundColor': '#50C878', 'color': 'white', 'marginLeft': 50,
+                    'marginRight': 25, 'textAlign': 'center', 'borderRadius': '10px',
+                    'borderStyle': 'double'}),
+    html.Div([
+        html.Div(', '.join(COUNTRIES),
+                 style={'backgroundColor': '#007FFF', 'color': 'white', 'padding': '10px',
+                        'width': '80%', 'margin': '20px auto', 'textAlign': 'center',
+                        'borderRadius': '10px'}),
+        build_summary_table(df_countries),
+        dcc.Dropdown(COUNTRIES, value=COUNTRIES, multi=True, clearable=False,
+                     id='country-dropdown',
+                     style={'padding': '15px', 'backgroundColor': PAPER, 'color': 'purple'}),
+        dcc.Graph(id='bar-chart'),
+        dcc.Graph(id='line-chart'),
+        dcc.Graph(id='map-chart'),
+    ]),
+])
+
+
+@callback(
+    Output('bar-chart', 'figure'),
+    Output('line-chart', 'figure'),
+    Output('map-chart', 'figure'),
+    Input('country-dropdown', 'value'),
+)
+def update_charts(selected):
+    return build_figures(df_countries, selected)
+
+
+if __name__ == '__main__':
+    app.run(port=8092)
